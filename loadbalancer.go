@@ -13,12 +13,17 @@ type LoadBalancer struct {
 	AfterRequest    func(up *Upstream, req *http.Request, res *http.Response)
 	OnMarkUnhealthy func(up *Upstream)
 	OnMarkHealthy   func(up *Upstream)
+	disposed        bool
 }
 
 func CreateLoadBalancer() *LoadBalancer {
 	lb := &LoadBalancer{}
 	go lb.StartHealthWatcher()
 	return lb
+}
+
+func (lb *LoadBalancer) Dispose() {
+	lb.disposed = true
 }
 
 func (lb *LoadBalancer) StartHealthWatcher() {
@@ -36,6 +41,11 @@ func (lb *LoadBalancer) StartHealthWatcher() {
 						lb.OnMarkHealthy(upstream)
 					}
 				}
+			}
+		default:
+			if lb.disposed {
+				healthyTicker.Stop()
+				return
 			}
 		}
 	}
