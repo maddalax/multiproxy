@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"multiproxy"
+	"github.com/maddalax/multiproxy"
 	"net/http"
 	"net/url"
 	"time"
