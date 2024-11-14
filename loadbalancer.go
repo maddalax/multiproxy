@@ -3,7 +3,6 @@ package multiproxy
 import (
 	"math/rand"
 	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -58,15 +57,6 @@ func (lb *LoadBalancer) GetValidUpstreams(req *http.Request) []*Upstream {
 	}
 
 	return upstreams
-}
-
-func (lb *LoadBalancer) GetUpstreamMatching(url *url.URL) *Upstream {
-	for _, upstream := range lb.upstreams {
-		if upstream.Url.Host == url.Host && upstream.Url.Scheme == url.Scheme {
-			return upstream
-		}
-	}
-	return nil
 }
 
 func (lb *LoadBalancer) Random(r *http.Request) *Upstream {
