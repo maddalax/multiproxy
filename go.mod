@@ -1,4 +1,4 @@
-module multiproxy
+module github.com/maddalax/multiproxy
 
 go 1.23.0
 
