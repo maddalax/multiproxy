@@ -21,7 +21,9 @@ type Upstream struct {
 	TotalRequests       int
 	TotalErrorResponses int
 	Healthy             bool
-	Matches             []Match
+	// MatchesFunc is a custom function that can be used to determine if a request matches an upstream
+	MatchesFunc func(req *http.Request, match *Match) bool
+	Matches     []Match
 }
 
 func (u *Upstream) Handle(proxy *httputil.ReverseProxy, w http.ResponseWriter, r *http.Request) {

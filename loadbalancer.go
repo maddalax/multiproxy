@@ -1,6 +1,7 @@
 package multiproxy
 
 import (
+	"context"
 	"math/rand"
 	"net/http"
 	"time"
@@ -14,22 +15,38 @@ type LoadBalancer struct {
 	OnMarkUnhealthy func(up *Upstream)
 	OnMarkHealthy   func(up *Upstream)
 	disposed        bool
+	cancel          context.CancelFunc
+	context         context.Context
 }
 
 func CreateLoadBalancer() *LoadBalancer {
-	lb := &LoadBalancer{}
+	ctx, cancel := context.WithCancel(context.Background())
+	lb := &LoadBalancer{
+		context: ctx,
+		cancel:  cancel,
+	}
 	go lb.StartHealthWatcher()
 	return lb
 }
 
+func (lb *LoadBalancer) SetUpstreams(upstreams []*Upstream) {
+	for _, upstream := range upstreams {
+		upstream.Healthy = true
+	}
+	lb.upstreams = upstreams
+}
+
 func (lb *LoadBalancer) Dispose() {
-	lb.disposed = true
+	lb.cancel()
 }
 
 func (lb *LoadBalancer) StartHealthWatcher() {
 	healthyTicker := time.NewTicker(10 * time.Second)
 	for {
 		select {
+		case <-lb.context.Done():
+			healthyTicker.Stop()
+			return
 		case <-healthyTicker.C:
 			for _, upstream := range lb.upstreams {
 				// if the upstream is unhealthy, and it's been more than 10 seconds since the last request
@@ -41,11 +58,6 @@ func (lb *LoadBalancer) StartHealthWatcher() {
 						lb.OnMarkHealthy(upstream)
 					}
 				}
-			}
-		default:
-			if lb.disposed {
-				healthyTicker.Stop()
-				return
 			}
 		}
 	}

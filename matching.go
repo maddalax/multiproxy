@@ -21,8 +21,14 @@ func (u *Upstream) HostMatches(host string, match *Match) bool {
 
 func (u *Upstream) MatchesReq(req *http.Request) bool {
 	for _, match := range u.Matches {
-		if u.PathMatches(req.URL.Path, &match) && u.HostMatches(req.Host, &match) {
-			return true
+		if u.MatchesFunc != nil {
+			if u.MatchesFunc(req, &match) {
+				return true
+			}
+		} else {
+			if u.PathMatches(req.URL.Path, &match) && u.HostMatches(req.Host, &match) {
+				return true
+			}
 		}
 	}
 	return false
