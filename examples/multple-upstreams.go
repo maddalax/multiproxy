@@ -8,8 +8,12 @@ import (
 	"time"
 )
 
+type UpstreamMeta struct {
+	SomeField any
+}
+
 func main() {
-	lb := multiproxy.CreateLoadBalancer[any]()
+	lb := multiproxy.CreateLoadBalancer[UpstreamMeta]()
 
 	go func() {
 		for {
@@ -18,21 +22,21 @@ func main() {
 		}
 	}()
 
-	lb.BeforeRequest = func(up *multiproxy.Upstream[any], req *http.Request) {
+	lb.BeforeRequest = func(up *multiproxy.Upstream[UpstreamMeta], req *http.Request) {
 		req.Header.Add("X-Forwarded-For", "")
 	}
 
-	lb.AfterRequest = func(up *multiproxy.Upstream[any], req *http.Request, res *http.Response) {
+	lb.AfterRequest = func(up *multiproxy.Upstream[UpstreamMeta], req *http.Request, res *http.Response) {
 	}
 
-	lb.OnError = func(up *multiproxy.Upstream[any], req *http.Request, err error) {
+	lb.OnError = func(up *multiproxy.Upstream[UpstreamMeta], req *http.Request, err error) {
 	}
 
-	lb.OnMarkUnhealthy = func(up *multiproxy.Upstream[any]) {
+	lb.OnMarkUnhealthy = func(up *multiproxy.Upstream[UpstreamMeta]) {
 		//slog.Info("Upstream marked as unhealthy", slog.String("host", up.Url.Host))
 	}
 
-	lb.OnMarkHealthy = func(up *multiproxy.Upstream[any]) {
+	lb.OnMarkHealthy = func(up *multiproxy.Upstream[UpstreamMeta]) {
 		//slog.Info("Upstream marked as healthy", slog.String("host", up.Url.Host))
 	}
 
@@ -40,7 +44,7 @@ func main() {
 	upstreamUrl2, _ := url.Parse("http://localhost:4000")
 	upstreamUrl3, _ := url.Parse("http://localhost:4003")
 
-	lb.Add(&multiproxy.Upstream[any]{
+	lb.Add(&multiproxy.Upstream[UpstreamMeta]{
 		Url:     upstreamUrl,
 		Healthy: false,
 		Matches: []multiproxy.Match{
@@ -49,9 +53,12 @@ func main() {
 				Path: "",
 			},
 		},
+		Metadata: UpstreamMeta{
+			SomeField: "some value",
+		},
 	})
 
-	lb.Add(&multiproxy.Upstream[any]{
+	lb.Add(&multiproxy.Upstream[UpstreamMeta]{
 		Url:     upstreamUrl2,
 		Healthy: false,
 		Matches: []multiproxy.Match{
@@ -60,9 +67,12 @@ func main() {
 				Path: "",
 			},
 		},
+		Metadata: UpstreamMeta{
+			SomeField: "some value",
+		},
 	})
 
-	lb.Add(&multiproxy.Upstream[any]{
+	lb.Add(&multiproxy.Upstream[UpstreamMeta]{
 		Url:     upstreamUrl3,
 		Healthy: false,
 		Matches: []multiproxy.Match{
@@ -71,11 +81,14 @@ func main() {
 				Path: "",
 			},
 		},
+		Metadata: UpstreamMeta{
+			SomeField: "some value",
+		},
 	})
 
 	for i := 0; i < 20; i++ {
 		u, _ := url.Parse(fmt.Sprintf("http://localhost:400%d", i))
-		lb.Add(&multiproxy.Upstream[any]{
+		lb.Add(&multiproxy.Upstream[UpstreamMeta]{
 			Url:     u,
 			Healthy: false,
 			Matches: []multiproxy.Match{
