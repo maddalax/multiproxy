@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	lb := multiproxy.CreateLoadBalancer()
+	lb := multiproxy.CreateLoadBalancer[any]()
 
 	go func() {
 		for {
@@ -18,21 +18,21 @@ func main() {
 		}
 	}()
 
-	lb.BeforeRequest = func(up *multiproxy.Upstream, req *http.Request) {
+	lb.BeforeRequest = func(up *multiproxy.Upstream[any], req *http.Request) {
 		req.Header.Add("X-Forwarded-For", "")
 	}
 
-	lb.AfterRequest = func(up *multiproxy.Upstream, req *http.Request, res *http.Response) {
+	lb.AfterRequest = func(up *multiproxy.Upstream[any], req *http.Request, res *http.Response) {
 	}
 
-	lb.OnError = func(up *multiproxy.Upstream, req *http.Request, err error) {
+	lb.OnError = func(up *multiproxy.Upstream[any], req *http.Request, err error) {
 	}
 
-	lb.OnMarkUnhealthy = func(up *multiproxy.Upstream) {
+	lb.OnMarkUnhealthy = func(up *multiproxy.Upstream[any]) {
 		//slog.Info("Upstream marked as unhealthy", slog.String("host", up.Url.Host))
 	}
 
-	lb.OnMarkHealthy = func(up *multiproxy.Upstream) {
+	lb.OnMarkHealthy = func(up *multiproxy.Upstream[any]) {
 		//slog.Info("Upstream marked as healthy", slog.String("host", up.Url.Host))
 	}
 
@@ -40,7 +40,7 @@ func main() {
 	upstreamUrl2, _ := url.Parse("http://localhost:4000")
 	upstreamUrl3, _ := url.Parse("http://localhost:4003")
 
-	lb.Add(&multiproxy.Upstream{
+	lb.Add(&multiproxy.Upstream[any]{
 		Url:     upstreamUrl,
 		Healthy: false,
 		Matches: []multiproxy.Match{
@@ -51,7 +51,7 @@ func main() {
 		},
 	})
 
-	lb.Add(&multiproxy.Upstream{
+	lb.Add(&multiproxy.Upstream[any]{
 		Url:     upstreamUrl2,
 		Healthy: false,
 		Matches: []multiproxy.Match{
@@ -62,7 +62,7 @@ func main() {
 		},
 	})
 
-	lb.Add(&multiproxy.Upstream{
+	lb.Add(&multiproxy.Upstream[any]{
 		Url:     upstreamUrl3,
 		Healthy: false,
 		Matches: []multiproxy.Match{
@@ -75,7 +75,7 @@ func main() {
 
 	for i := 0; i < 20; i++ {
 		u, _ := url.Parse(fmt.Sprintf("http://localhost:400%d", i))
-		lb.Add(&multiproxy.Upstream{
+		lb.Add(&multiproxy.Upstream[any]{
 			Url:     u,
 			Healthy: false,
 			Matches: []multiproxy.Match{

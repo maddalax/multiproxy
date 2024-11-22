@@ -1,24 +1,26 @@
 package multiproxy
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"time"
 )
 
-type ReverseProxyOptions struct {
-	lb *LoadBalancer
+type ReverseProxyOptions[T any] struct {
+	lb *LoadBalancer[T]
 }
 
-func newReverseProxy(opts ReverseProxyOptions, upstream *Upstream) *httputil.ReverseProxy {
+func newReverseProxy[T any](opts ReverseProxyOptions[T], upstream *Upstream[T]) *httputil.ReverseProxy {
 	// no upstreams available
 	if upstream == nil {
+		fmt.Printf("No server available to handle this request. this should not happen")
 		return nil
 	}
 
 	now := time.Now()
 
-	errHand := func(proxy *httputil.ReverseProxy, opts ReverseProxyOptions) func(http.ResponseWriter, *http.Request, error) {
+	errHand := func(proxy *httputil.ReverseProxy, opts ReverseProxyOptions[T]) func(http.ResponseWriter, *http.Request, error) {
 		return func(w http.ResponseWriter, r *http.Request, err error) {
 
 			if opts.lb.OnError != nil {
@@ -107,14 +109,14 @@ func newReverseProxy(opts ReverseProxyOptions, upstream *Upstream) *httputil.Rev
 	return proxy
 }
 
-func NewReverseProxyHandler(lb *LoadBalancer) func(w http.ResponseWriter, r *http.Request) {
+func NewReverseProxyHandler[T any](lb *LoadBalancer[T]) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		upstream := lb.Random(r)
 		if upstream == nil {
 			http.Error(w, "No server available to handle this request.", http.StatusServiceUnavailable)
 			return
 		}
-		p := newReverseProxy(ReverseProxyOptions{lb: lb}, upstream)
+		p := newReverseProxy(ReverseProxyOptions[T]{lb: lb}, upstream)
 		p.ServeHTTP(w, r)
 	}
 }
